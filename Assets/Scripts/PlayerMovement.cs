@@ -1,18 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerMovement : MonoBehaviour
 {
 
     Vector3 playerVelocity;
     Vector3 move;
-
+    
     public float walkSpeed = 5;
     public float runSpeed = 8; 
     public float jumpHeight = 2;
     public float gravity = -9.18f;
     public float mouseSensitivy = 5.0f;
+    private bool isGrounded;
+    private bool hasBluePU;
+    public Text scoreText;
     
     private CharacterController controller;
     private Animator animator;
@@ -27,6 +31,13 @@ public class PlayerMovement : MonoBehaviour
     {
         ProcessMovement();
         UpdateRotation();
+        UpdateScoreValue();
+        Debug.Log(isGrounded);
+    }
+
+    void UpdateScoreValue()
+    {
+        scoreText.text = "Score: " + GameManager.Instance.GetScore();
     }
 
     void UpdateRotation()
@@ -46,7 +57,7 @@ public class PlayerMovement : MonoBehaviour
 
     void UpdateAnimator()
     {
-        bool isGrounded = controller.isGrounded; 
+        isGrounded = controller.isGrounded; 
 
         if(move != Vector3.zero)
         {
@@ -65,8 +76,8 @@ public class PlayerMovement : MonoBehaviour
     }
 
     void ProcessMovement()
-    { 
-        bool isGrounded = controller.isGrounded; 
+    {
+        isGrounded = controller.isGrounded; 
         float speed = GetMovementSpeed();
  
         Vector3 cameraForward = Camera.main.transform.forward;
@@ -93,29 +104,11 @@ public class PlayerMovement : MonoBehaviour
                 playerVelocity.y +=  Mathf.Sqrt(jumpHeight * -3.0f * gravity);
             }
         }
-        else
+        else if (!isGrounded && hasBluePU && Input.GetButtonDown("Jump")) 
         {
-            playerVelocity.y += gravity * Time.deltaTime;
-        }
-
-        controller.Move(playerVelocity * Time.deltaTime + move);
-    }
-
-    void ProcessGravity()
-    {
-        bool isGrounded = controller.isGrounded; 
-
-        if (isGrounded)
-        {
-            if (playerVelocity.y < 0.0f)
-            {
-                playerVelocity.y = -1.0f;
-            }
-            
-            if (Input.GetButtonDown("Jump"))
-            {
-                playerVelocity.y +=  Mathf.Sqrt(jumpHeight * -3.0f * gravity);
-            }
+            playerVelocity.y += Mathf.Sqrt(jumpHeight * -3.0f * gravity);
+            animator.SetTrigger("DoubleJump");
+            hasBluePU = false;
         }
         else
         {
@@ -123,28 +116,29 @@ public class PlayerMovement : MonoBehaviour
         }
 
         controller.Move(playerVelocity * Time.deltaTime + move);
+        animator.SetBool("isGrounded", isGrounded);
     }
 
     float GetMovementSpeed()
     {
-        if (Input.GetButton("Fire3"))// Left shift
+        if (Input.GetButton("Fire3"))
         {
             return runSpeed;
-        }
-        else
-        {
+        } else {
             return walkSpeed;
         }
     }
 
     public void OnTriggerEnter(Collider other)
     {
-        // bool hasBluePU = controller.hasBluePU; 
-        if(other.tag == "PowerUp")
+        if(other.tag == "BluePowerUp")
         {
-            Destroy(other.gameObject);
-            // animator.SetBool("hasBluePU", hasBluePU);
-            Debug.Log("Got the blue power up!");
+            hasBluePU = true; 
+            animator.SetBool("hasBluePU", hasBluePU);
+        }
+        else if (other.tag == "DeathPlane")
+        {
+            animator.SetBool("isGrounded", true);
         }
     }
 }

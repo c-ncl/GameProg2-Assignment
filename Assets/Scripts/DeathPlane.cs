@@ -7,10 +7,9 @@ public class DeathPlane : MonoBehaviour
 {
     public void OnTriggerEnter(Collider other)
     {
-        //Restart the level when I hit the trigger
         if(other.tag == "Player")
         {
-            // Active scene not into build settings yet
+            GameManager.Instance.RestartLevelScore();
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
     }
